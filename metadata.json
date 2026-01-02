@@ -1,5 +1,5 @@
 {
-  "name": "Copy of PDF Alchemy",
-  "description": "A professional-grade, browser-only PDF management suite for merging, splitting, rotating, and AI-powered analysis.",
+  "name": "pdf_help",
+  "description": "Professional, browser-only PDF workbench utility for high-performance document processing.",
   "requestFramePermissions": []
 }

@@ -3,8 +3,10 @@ import { PDFDocument, degrees, rgb, StandardFonts } from 'pdf-lib';
 import JSZip from 'jszip';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configure worker for pdfjs-dist
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://esm.sh/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+// Use a dynamic import or static URL for the worker in a Vite environment
+// When using npm, the worker is usually handled by the bundler or pointed to a CDN.
+// For a standard Vite build, this points to the worker file in node_modules.
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 export const getPageCount = async (file: File): Promise<number> => {
   if (file.type.startsWith('image/')) return 1;

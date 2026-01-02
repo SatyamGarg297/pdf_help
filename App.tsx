@@ -9,12 +9,10 @@ import {
   Download, 
   ArrowRight,
   Loader2,
-  Info,
   AlertCircle,
   X,
   ChevronUp,
   ChevronDown,
-  Files,
   Zap,
   Image as ImageIcon,
   ImagePlus,
@@ -32,7 +30,9 @@ import {
   ArrowUpRight,
   Settings2,
   History,
-  LayoutTemplate
+  LayoutTemplate,
+  HelpCircle,
+  ShieldCheck
 } from 'lucide-react';
 import { PDFFile, AppTool } from './types';
 import { getPageCount, mergePDFs, splitPDF, rotatePDF, downloadBlob, splitToIndividualFiles, pdfToImagesZip, imagesToPDF, extractTextFromPdf, getPageThumbnails, reorderPDFPages, removePagesFromPDF, applyWatermarkToPDF, addPageNumbersToPDF } from './services/pdfService';
@@ -183,7 +183,7 @@ const App: React.FC = () => {
     setIsProcessing(true);
     try {
       const result = await mergePDFs(files.map(f => f.file));
-      downloadBlob(result, `merged_alchemy_${Date.now()}.pdf`);
+      downloadBlob(result, `merged_help_${Date.now()}.pdf`);
     } catch (error) {
       setError('Failed to merge PDFs. They might be encrypted.');
     } finally {
@@ -372,19 +372,22 @@ const App: React.FC = () => {
       <header className="sticky top-0 z-50 glass-panel border-b border-slate-200/50 px-8 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3 group cursor-pointer">
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-2.5 rounded-2xl shadow-lg shadow-blue-200 transition-transform group-hover:scale-110">
-              <Zap className="text-white w-6 h-6 fill-white" />
+            <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-2.5 rounded-2xl shadow-lg shadow-indigo-100 transition-transform group-hover:scale-110">
+              <div className="relative">
+                <FileText className="text-white w-6 h-6" />
+                <HelpCircle className="text-white w-3 h-3 absolute -bottom-1 -right-1 bg-indigo-600 rounded-full" />
+              </div>
             </div>
             <div>
-              <h1 className="text-xl font-extrabold text-slate-900 tracking-tight leading-tight">PDF Alchemy</h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Pro Browser Suite</p>
+              <h1 className="text-xl font-extrabold text-slate-900 tracking-tight leading-tight italic">pdf_help</h1>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Secure PDF Workbench</p>
             </div>
           </div>
           
           <div className="hidden md:flex items-center gap-6">
             <div className="flex items-center gap-2 px-4 py-1.5 bg-slate-100/50 border border-slate-200/50 rounded-full">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              <span className="text-xs font-bold text-slate-600 tracking-wide uppercase">Local Processing</span>
+              <ShieldCheck size={14} className="text-emerald-500" />
+              <span className="text-xs font-bold text-slate-600 tracking-wide uppercase">Private Mode</span>
             </div>
             <div className="w-px h-8 bg-slate-200"></div>
             <button className="text-slate-400 hover:text-slate-900 transition-colors"><Settings2 size={20}/></button>
@@ -398,14 +401,14 @@ const App: React.FC = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/10 backdrop-blur-[2px]">
           <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-4 animate-in zoom-in duration-300 border border-slate-200">
             <div className="relative">
-              <Loader2 className="animate-spin text-blue-600" size={48} strokeWidth={2.5}/>
+              <Loader2 className="animate-spin text-indigo-600" size={48} strokeWidth={2.5}/>
               <div className="absolute inset-0 flex items-center justify-center">
-                <Zap size={16} className="text-blue-400 fill-blue-400"/>
+                <FileText size={16} className="text-indigo-400 fill-indigo-400"/>
               </div>
             </div>
             <div className="text-center">
-              <p className="font-extrabold text-slate-900 text-lg">Alchemizing Files...</p>
-              <p className="text-sm font-medium text-slate-500">Processing locally in your secure sandbox</p>
+              <p className="font-extrabold text-slate-900 text-lg">Optimizing...</p>
+              <p className="text-sm font-medium text-slate-500">Executing local browser operations</p>
             </div>
           </div>
         </div>
@@ -446,8 +449,8 @@ const App: React.FC = () => {
           <div className="pt-6 border-t border-slate-200/50">
              <div className="glass-panel p-5 rounded-2xl space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Workspace</span>
-                  <span className="bg-blue-100 text-blue-600 text-[10px] font-black px-2 py-0.5 rounded-full">{files.length} Files</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Workspace</span>
+                  <span className="bg-indigo-100 text-indigo-600 text-[10px] font-black px-2 py-0.5 rounded-full">{files.length} Files</span>
                 </div>
                 {files.length > 0 && (
                   <button onClick={clearFiles} className="w-full py-2.5 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 text-xs font-bold transition-all flex items-center justify-center gap-2">
@@ -461,7 +464,7 @@ const App: React.FC = () => {
         {/* Workspace Area */}
         <div className="flex-1 flex flex-col gap-6">
           {!interactionState && (
-            <div className="bg-white/40 border-2 border-dashed border-slate-300/50 rounded-[2.5rem] p-3 shadow-sm hover:border-blue-400 transition-all group overflow-hidden">
+            <div className="bg-white/40 border-2 border-dashed border-slate-300/50 rounded-[2.5rem] p-3 shadow-sm hover:border-indigo-400 transition-all group overflow-hidden">
                <FileUploader 
                 onFilesAdded={handleFilesAdded} 
                 accept={activeTool === 'image-to-pdf' ? "image/*" : "application/pdf"}
@@ -472,12 +475,12 @@ const App: React.FC = () => {
           <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden flex flex-col min-h-[600px] flex-1">
             <div className="border-b border-slate-100 px-8 py-6 flex items-center justify-between bg-slate-50/30">
               <div className="flex items-center gap-4">
-                <div className={`p-2.5 rounded-xl bg-blue-50 text-blue-600`}>
+                <div className={`p-2.5 rounded-xl bg-indigo-50 text-indigo-600`}>
                    {getToolIcon(activeTool, 22)}
                 </div>
                 <div>
                   <h2 className="text-xl font-extrabold text-slate-800 capitalize tracking-tight">{activeTool.replace(/-/g, ' ')}</h2>
-                  <p className="text-xs font-medium text-slate-400">Configure and execute your PDF alchemy</p>
+                  <p className="text-xs font-medium text-slate-400">Configure parameters for local execution</p>
                 </div>
               </div>
               <ToolHeaderActions 
@@ -505,7 +508,7 @@ const App: React.FC = () => {
                    {/* Assembly Views */}
                    {(activeTool === 'merge' || activeTool === 'image-to-pdf') && (
                      <div className="space-y-4">
-                        <ToolHint icon={<LayoutTemplate size={18}/>} title="Workflow Order" description="Drag to rearrange. The final document will be generated following this sequence exactly." />
+                        <ToolHint icon={<LayoutTemplate size={18}/>} title="Execution Sequence" description="Adjust file priority. Processing occurs from top to bottom." />
                         <div className="grid grid-cols-1 gap-3">
                           {files.map((f, i) => (
                             <FileCard 
@@ -573,6 +576,15 @@ const App: React.FC = () => {
           </section>
         </div>
       </main>
+
+      <footer className="p-8 border-t bg-white flex justify-center items-center">
+         <div className="flex items-center gap-2 opacity-40 grayscale group hover:grayscale-0 hover:opacity-100 transition-all">
+            <div className="bg-indigo-600 p-1 rounded-lg">
+              <FileText size={14} className="text-white"/>
+            </div>
+            <span className="text-[11px] font-black uppercase tracking-widest text-slate-800 italic">pdf_help utility</span>
+         </div>
+      </footer>
     </div>
   );
 };
@@ -584,11 +596,11 @@ const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.Re
     onClick={onClick}
     className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-all group ${
       active 
-        ? 'bg-blue-600 text-white shadow-xl shadow-blue-200'
+        ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-200'
         : 'text-slate-500 hover:bg-white hover:shadow-md hover:text-slate-900'
     }`}
   >
-    <span className={`${active ? 'text-white' : 'text-slate-400 group-hover:text-blue-500'} transition-colors`}>{icon}</span>
+    <span className={`${active ? 'text-white' : 'text-slate-400 group-hover:text-indigo-500'} transition-colors`}>{icon}</span>
     <span className="text-sm font-bold capitalize">{label}</span>
     {active && <ArrowRight size={14} className="ml-auto animate-in slide-in-from-left-2"/>}
   </button>
@@ -599,8 +611,8 @@ const ToolHeaderActions: React.FC<any> = ({ tool, files, isProcessing, onExecute
     return (
       <div className="flex gap-2">
         <button onClick={onCancelInteraction} className="px-5 py-2.5 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all">Cancel</button>
-        <button onClick={onSaveInteraction} className="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 flex items-center gap-2">
-          <Download size={14}/> {tool === 'reorder' ? 'Save New Order' : 'Delete Selected'}
+        <button onClick={onSaveInteraction} className="px-5 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100 flex items-center gap-2">
+          <Download size={14}/> {tool === 'reorder' ? 'Commit Layout' : 'Commit Deletion'}
         </button>
       </div>
     );
@@ -614,8 +626,8 @@ const ToolHeaderActions: React.FC<any> = ({ tool, files, isProcessing, onExecute
         onClick={onExecute}
         className="px-6 py-2.5 rounded-2xl text-sm font-black bg-slate-900 text-white hover:bg-black disabled:opacity-50 disabled:bg-slate-200 disabled:text-slate-400 shadow-xl shadow-slate-200 flex items-center gap-2 transition-all active:scale-95"
       >
-        {isProcessing ? <Loader2 className="animate-spin" size={16}/> : <Zap size={16} className="fill-white"/>}
-        {tool === 'merge' ? 'Merge All' : 'Create PDF'}
+        {isProcessing ? <Loader2 className="animate-spin" size={16}/> : <ArrowUpRight size={16} className="text-white"/>}
+        {tool === 'merge' ? 'Merge Sequence' : 'Compile PDF'}
       </button>
     );
   }
@@ -625,14 +637,14 @@ const ToolHeaderActions: React.FC<any> = ({ tool, files, isProcessing, onExecute
 const EmptyState: React.FC<{ tool: string }> = ({ tool }) => (
   <div className="h-full flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in duration-700">
     <div className="relative group">
-       <div className="absolute inset-0 bg-blue-200/50 rounded-full blur-3xl group-hover:bg-blue-300/50 transition-all"></div>
+       <div className="absolute inset-0 bg-indigo-200/50 rounded-full blur-3xl group-hover:bg-indigo-300/50 transition-all"></div>
        <div className="relative bg-white p-10 rounded-full border border-slate-100 shadow-2xl float-animation">
           <FileText size={64} strokeWidth={1} className="text-slate-300"/>
        </div>
     </div>
     <div className="max-w-sm space-y-2">
-      <h3 className="text-2xl font-extrabold text-slate-800">Your workbench is empty</h3>
-      <p className="text-slate-500 font-medium text-sm leading-relaxed">Alchemy requires ingredients. Drag your {tool === 'image-to-pdf' ? 'images' : 'PDF files'} into the crucible above to start the transformation.</p>
+      <h3 className="text-2xl font-extrabold text-slate-800 italic tracking-tight">Workbench Ready</h3>
+      <p className="text-slate-500 font-medium text-sm leading-relaxed">Drop your target {tool === 'image-to-pdf' ? 'images' : 'PDF files'} to initiate the local browser engine.</p>
     </div>
   </div>
 );
@@ -641,9 +653,9 @@ const FileCard: React.FC<any> = ({ file, index, total, onRemove, onUp, onDown })
   <div className="group flex items-center justify-between p-5 bg-white border border-slate-100 rounded-3xl tool-card-hover shadow-sm">
     <div className="flex items-center gap-5 overflow-hidden">
       <div className="flex flex-col items-center gap-1.5 shrink-0">
-        <button onClick={onUp} disabled={index === 0} className="text-slate-300 hover:text-blue-500 disabled:opacity-0 transition-all p-1"><ChevronUp size={16}/></button>
+        <button onClick={onUp} disabled={index === 0} className="text-slate-300 hover:text-indigo-500 disabled:opacity-0 transition-all p-1"><ChevronUp size={16}/></button>
         <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500">#{index+1}</div>
-        <button onClick={onDown} disabled={index === total - 1} className="text-slate-300 hover:text-blue-500 disabled:opacity-0 transition-all p-1"><ChevronDown size={16}/></button>
+        <button onClick={onDown} disabled={index === total - 1} className="text-slate-300 hover:text-indigo-500 disabled:opacity-0 transition-all p-1"><ChevronDown size={16}/></button>
       </div>
       <div className="w-16 h-16 bg-slate-50 rounded-2xl shadow-inner border border-slate-100 shrink-0 overflow-hidden flex items-center justify-center transition-transform group-hover:scale-105">
         {file.previewUrl ? <img src={file.previewUrl} className="w-full h-full object-cover"/> : <FileText size={28} className="text-slate-300"/>}
@@ -664,11 +676,11 @@ const FileCard: React.FC<any> = ({ file, index, total, onRemove, onUp, onDown })
 );
 
 const ToolHint: React.FC<any> = ({ icon, title, description }) => (
-  <div className="flex items-start gap-4 p-5 bg-blue-50/50 border border-blue-100 rounded-3xl">
-    <div className="bg-white p-2 rounded-xl text-blue-600 shadow-sm">{icon}</div>
+  <div className="flex items-start gap-4 p-5 bg-indigo-50/50 border border-indigo-100 rounded-3xl">
+    <div className="bg-white p-2 rounded-xl text-indigo-600 shadow-sm">{icon}</div>
     <div className="space-y-0.5">
-      <h4 className="text-sm font-black text-blue-900 uppercase tracking-tight">{title}</h4>
-      <p className="text-xs font-medium text-blue-700 leading-relaxed">{description}</p>
+      <h4 className="text-sm font-black text-indigo-900 uppercase tracking-tight">{title}</h4>
+      <p className="text-xs font-medium text-indigo-700 leading-relaxed">{description}</p>
     </div>
   </div>
 );
@@ -683,11 +695,11 @@ const SplitView: React.FC<any> = ({ files, splitRanges, setSplitRanges, parsedPa
           value={splitRanges} 
           onChange={(e) => setSplitRanges(e.target.value)} 
           placeholder="e.g. 1, 3, 5-10"
-          className="w-full bg-white border border-slate-200 px-6 py-4 rounded-2xl text-lg font-bold focus:ring-4 focus:ring-blue-100 focus:outline-none transition-all placeholder:text-slate-300"
+          className="w-full bg-white border border-slate-200 px-6 py-4 rounded-2xl text-lg font-bold focus:ring-4 focus:ring-indigo-100 focus:outline-none transition-all placeholder:text-slate-300"
         />
         {parsedPages.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-2">
-            {parsedPages.map((p: number) => <span key={p} className="bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm">P{p}</span>)}
+            {parsedPages.map((p: number) => <span key={p} className="bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm">P{p}</span>)}
           </div>
         )}
      </div>
@@ -695,11 +707,11 @@ const SplitView: React.FC<any> = ({ files, splitRanges, setSplitRanges, parsedPa
         {files.map((f: any) => (
           <div key={f.id} className="p-5 bg-white border border-slate-100 rounded-3xl flex items-center justify-between shadow-sm">
              <div className="flex items-center gap-4">
-               <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500"><FileText size={24}/></div>
+               <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500"><FileText size={24}/></div>
                <div className="truncate max-w-xs"><p className="text-sm font-bold text-slate-800 truncate">{f.name}</p><p className="text-xs text-slate-400">{f.pageCount} Pages</p></div>
              </div>
              <div className="flex gap-2">
-                <button onClick={() => onSplit(f.id)} disabled={parsedPages.length === 0} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-100 disabled:bg-slate-200">Extract</button>
+                <button onClick={() => onSplit(f.id)} disabled={parsedPages.length === 0} className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-100 disabled:bg-slate-200">Extract</button>
                 <button onClick={() => onSplitAll(f.id)} className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold">Split All</button>
              </div>
           </div>
@@ -713,7 +725,7 @@ const RotateView: React.FC<any> = ({ files, splitRanges, setSplitRanges, onRotat
      <ToolHint icon={<RefreshCw size={18}/>} title="Orientation Adjust" description="Apply rotation to the entire document or a specific subset of pages defined in the range below." />
      <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Target Range (Leave empty for All)</label>
-        <input type="text" value={splitRanges} onChange={(e) => setSplitRanges(e.target.value)} placeholder="e.g. 1-2, 5" className="w-full bg-white border border-slate-200 px-4 py-2.5 rounded-xl font-bold focus:ring-2 focus:ring-blue-100 focus:outline-none"/>
+        <input type="text" value={splitRanges} onChange={(e) => setSplitRanges(e.target.value)} placeholder="e.g. 1-2, 5" className="w-full bg-white border border-slate-200 px-4 py-2.5 rounded-xl font-bold focus:ring-2 focus:ring-indigo-100 focus:outline-none"/>
      </div>
      {files.map((f: any) => (
        <div key={f.id} className="p-6 bg-white border border-slate-100 rounded-3xl space-y-4 shadow-sm">
@@ -729,9 +741,9 @@ const RotateView: React.FC<any> = ({ files, splitRanges, setSplitRanges, onRotat
 );
 
 const RotateBtn: React.FC<any> = ({ icon, label, onClick }) => (
-  <button onClick={onClick} className="flex flex-col items-center gap-2 py-4 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-2xl transition-all group">
-    <div className="text-slate-400 group-hover:text-blue-600 group-hover:rotate-12 transition-transform">{icon}</div>
-    <span className="text-[10px] font-black text-slate-500 group-hover:text-blue-700 uppercase tracking-widest">{label}</span>
+  <button onClick={onClick} className="flex flex-col items-center gap-2 py-4 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded-2xl transition-all group">
+    <div className="text-slate-400 group-hover:text-indigo-600 group-hover:rotate-12 transition-transform">{icon}</div>
+    <span className="text-[10px] font-black text-slate-500 group-hover:text-indigo-700 uppercase tracking-widest">{label}</span>
   </button>
 );
 
@@ -740,21 +752,21 @@ const WatermarkView: React.FC<any> = ({ files, config, setConfig, onApply }) => 
     <ToolHint icon={<Stamp size={18}/>} title="Stamping Logic" description="Overlays text. Perfect for 'DRAFT', 'CONFIDENTIAL', or branding purposes across every page." />
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 bg-slate-50 rounded-[2.5rem] border border-slate-200">
       <div className="space-y-4">
-        <div><label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Stamp Text</label><input value={config.text} onChange={e => setConfig({...config, text: e.target.value})} className="w-full px-5 py-3 rounded-2xl border border-slate-200 font-bold focus:ring-4 focus:ring-blue-100 outline-none"/></div>
+        <div><label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Stamp Text</label><input value={config.text} onChange={e => setConfig({...config, text: e.target.value})} className="w-full px-5 py-3 rounded-2xl border border-slate-200 font-bold focus:ring-4 focus:ring-indigo-100 outline-none"/></div>
         <div className="flex gap-4">
-          <div className="flex-1"><label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Size ({config.fontSize})</label><input type="range" min="10" max="200" value={config.fontSize} onChange={e => setConfig({...config, fontSize: parseInt(e.target.value)})} className="w-full accent-blue-600"/></div>
-          <div className="flex-1"><label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Opacity ({Math.round(config.opacity*100)}%)</label><input type="range" min="0" max="1" step="0.1" value={config.opacity} onChange={e => setConfig({...config, opacity: parseFloat(e.target.value)})} className="w-full accent-blue-600"/></div>
+          <div className="flex-1"><label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Size ({config.fontSize})</label><input type="range" min="10" max="200" value={config.fontSize} onChange={e => setConfig({...config, fontSize: parseInt(e.target.value)})} className="w-full accent-indigo-600"/></div>
+          <div className="flex-1"><label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Opacity ({Math.round(config.opacity*100)}%)</label><input type="range" min="0" max="1" step="0.1" value={config.opacity} onChange={e => setConfig({...config, opacity: parseFloat(e.target.value)})} className="w-full accent-indigo-600"/></div>
         </div>
       </div>
       <div className="space-y-4">
-        <div><label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Rotation ({config.rotation}°)</label><input type="range" min="-180" max="180" value={config.rotation} onChange={e => setConfig({...config, rotation: parseInt(e.target.value)})} className="w-full accent-blue-600"/></div>
+        <div><label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Rotation ({config.rotation}°)</label><input type="range" min="-180" max="180" value={config.rotation} onChange={e => setConfig({...config, rotation: parseInt(e.target.value)})} className="w-full accent-indigo-600"/></div>
         <div><label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Color</label><input type="color" value={config.color} onChange={e => setConfig({...config, color: e.target.value})} className="w-full h-12 rounded-xl border-none cursor-pointer p-0"/></div>
       </div>
     </div>
     {files.map((f: any) => (
       <div key={f.id} className="p-6 bg-white border border-slate-100 rounded-3xl flex items-center justify-between shadow-sm">
         <div className="truncate max-w-sm"><h4 className="font-bold text-slate-800 truncate">{f.name}</h4><p className="text-xs text-slate-400">Ready for stamp</p></div>
-        <button onClick={() => onApply(f.id)} className="px-6 py-2.5 bg-blue-600 text-white rounded-2xl text-xs font-black shadow-lg shadow-blue-100 hover:scale-105 transition-transform">Apply Stamp</button>
+        <button onClick={() => onApply(f.id)} className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-black shadow-lg shadow-indigo-100 hover:scale-105 transition-transform">Apply Stamp</button>
       </div>
     ))}
   </div>
@@ -768,18 +780,18 @@ const PageNumberView: React.FC<any> = ({ files, config, setConfig, onApply }) =>
         <div>
           <label className="text-[10px] font-black text-slate-400 uppercase mb-3 block tracking-widest">Vertical Position</label>
           <div className="flex bg-slate-200/50 p-1 rounded-2xl">
-            {['top', 'bottom'].map(p => <button key={p} onClick={() => setConfig({...config, position: p})} className={`flex-1 py-3 rounded-xl text-xs font-black capitalize transition-all ${config.position === p ? 'bg-white shadow-lg text-blue-600' : 'text-slate-500'}`}>{p}</button>)}
+            {['top', 'bottom'].map(p => <button key={p} onClick={() => setConfig({...config, position: p})} className={`flex-1 py-3 rounded-xl text-xs font-black capitalize transition-all ${config.position === p ? 'bg-white shadow-lg text-indigo-600' : 'text-slate-500'}`}>{p}</button>)}
           </div>
         </div>
         <div>
           <label className="text-[10px] font-black text-slate-400 uppercase mb-3 block tracking-widest">Alignment</label>
           <div className="flex bg-slate-200/50 p-1 rounded-2xl">
-            {['left', 'center', 'right'].map(a => <button key={a} onClick={() => setConfig({...config, alignment: a})} className={`flex-1 py-3 rounded-xl flex justify-center transition-all ${config.alignment === a ? 'bg-white shadow-lg text-blue-600' : 'text-slate-400'}`}>{a === 'left' ? <AlignLeft size={18}/> : a === 'center' ? <AlignCenter size={18}/> : <AlignRight size={18}/>}</button>)}
+            {['left', 'center', 'right'].map(a => <button key={a} onClick={() => setConfig({...config, alignment: a})} className={`flex-1 py-3 rounded-xl flex justify-center transition-all ${config.alignment === a ? 'bg-white shadow-lg text-indigo-600' : 'text-slate-400'}`}>{a === 'left' ? <AlignLeft size={18}/> : a === 'center' ? <AlignCenter size={18}/> : <AlignRight size={18}/>}</button>)}
           </div>
         </div>
       </div>
       <div className="space-y-5">
-        <div><label className="text-[10px] font-black text-slate-400 uppercase mb-3 block tracking-widest">Font Size ({config.fontSize})</label><input type="range" min="8" max="32" value={config.fontSize} onChange={e => setConfig({...config, fontSize: parseInt(e.target.value)})} className="w-full accent-blue-600"/></div>
+        <div><label className="text-[10px] font-black text-slate-400 uppercase mb-3 block tracking-widest">Font Size ({config.fontSize})</label><input type="range" min="8" max="32" value={config.fontSize} onChange={e => setConfig({...config, fontSize: parseInt(e.target.value)})} className="w-full accent-indigo-600"/></div>
         <div><label className="text-[10px] font-black text-slate-400 uppercase mb-3 block tracking-widest">Text Color</label><input type="color" value={config.color} onChange={e => setConfig({...config, color: e.target.value})} className="w-full h-14 rounded-2xl border-none cursor-pointer p-0 shadow-inner"/></div>
       </div>
     </div>
@@ -798,19 +810,19 @@ const PdfToImageView: React.FC<any> = ({ files, format, setFormat, progress, onC
     <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 flex items-center justify-between">
        <p className="text-sm font-bold text-slate-700">Output Encoding</p>
        <div className="flex bg-slate-200/50 p-1 rounded-2xl w-64">
-          {['png', 'jpeg'].map(f => <button key={f} onClick={() => setFormat(f)} className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${format === f ? 'bg-white shadow-lg text-blue-600' : 'text-slate-500'}`}>{f}</button>)}
+          {['png', 'jpeg'].map(f => <button key={f} onClick={() => setFormat(f)} className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${format === f ? 'bg-white shadow-lg text-indigo-600' : 'text-slate-500'}`}>{f}</button>)}
        </div>
     </div>
     {files.map((f: any) => (
       <div key={f.id} className="p-6 bg-white border border-slate-100 rounded-3xl space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="truncate max-w-sm"><h4 className="font-bold text-slate-800 truncate">{f.name}</h4><p className="text-xs text-slate-400">{f.pageCount} Frames</p></div>
-          <button onClick={() => onConvert(f.id)} className="px-6 py-2.5 bg-blue-600 text-white rounded-2xl text-xs font-black shadow-lg shadow-blue-100">Package ZIP</button>
+          <button onClick={() => onConvert(f.id)} className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-black shadow-lg shadow-indigo-100">Package ZIP</button>
         </div>
         {progress[f.id] && (
            <div className="space-y-2 pt-2 animate-in fade-in">
-              <div className="flex justify-between text-[9px] font-black text-blue-600 uppercase tracking-widest"><span>Rendering Page {progress[f.id].current}</span><span>{Math.round((progress[f.id].current/progress[f.id].total)*100)}%</span></div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-50"><div className="h-full bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.4)] transition-all duration-300" style={{width:`${(progress[f.id].current/progress[f.id].total)*100}%`}}></div></div>
+              <div className="flex justify-between text-[9px] font-black text-indigo-600 uppercase tracking-widest"><span>Rendering Page {progress[f.id].current}</span><span>{Math.round((progress[f.id].current/progress[f.id].total)*100)}%</span></div>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-50"><div className="h-full bg-indigo-600 shadow-[0_0_12px_rgba(79,70,229,0.4)] transition-all duration-300" style={{width:`${(progress[f.id].current/progress[f.id].total)*100}%`}}></div></div>
            </div>
         )}
       </div>
@@ -829,10 +841,10 @@ const PdfToTextView: React.FC<any> = ({ files, texts, progress, onExtract }) => 
            <div className="flex items-center justify-between">
              <div className="truncate max-w-sm"><h4 className="font-bold text-slate-800 truncate">{f.name}</h4><p className="text-xs text-slate-400">Content Scan</p></div>
              <div className="flex gap-2">
-               {!text ? <button onClick={() => onExtract(f.id)} className="px-6 py-2.5 bg-blue-600 text-white rounded-2xl text-xs font-black shadow-lg shadow-blue-100">Extract Text</button> : <><button onClick={() => navigator.clipboard.writeText(text)} className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50">Copy</button><button onClick={() => downloadBlob(text, `${f.name}.txt`)} className="px-6 py-2.5 bg-slate-900 text-white rounded-2xl text-xs font-black shadow-xl">Save .txt</button></>}
+               {!text ? <button onClick={() => onExtract(f.id)} className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-black shadow-lg shadow-indigo-100">Extract Text</button> : <><button onClick={() => navigator.clipboard.writeText(text)} className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50">Copy</button><button onClick={() => downloadBlob(text, `${f.name}.txt`)} className="px-6 py-2.5 bg-slate-900 text-white rounded-2xl text-xs font-black shadow-xl">Save .txt</button></>}
              </div>
            </div>
-           {prog && <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-blue-500 transition-all" style={{width:`${(prog.current/prog.total)*100}%`}}></div></div>}
+           {prog && <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 transition-all" style={{width:`${(prog.current/prog.total)*100}%`}}></div></div>}
            {text && <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 max-h-60 overflow-y-auto custom-scrollbar shadow-inner"><pre className="text-[11px] font-mono text-slate-600 leading-relaxed whitespace-pre-wrap">{text.substring(0, 1500)}...</pre></div>}
         </div>
       );
@@ -847,10 +859,10 @@ const PageGridInteraction: React.FC<any> = ({ interactionState, files, onStart, 
         {files.map((f: any) => (
           <div key={f.id} className="p-6 bg-white border border-slate-100 rounded-3xl flex items-center justify-between shadow-sm tool-card-hover group">
             <div className="flex items-center gap-4 shrink-0">
-               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${mode === 'reorder' ? 'bg-blue-50 text-blue-500' : 'bg-rose-50 text-rose-500'}`}><FileText size={28}/></div>
+               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${mode === 'reorder' ? 'bg-indigo-50 text-indigo-500' : 'bg-rose-50 text-rose-500'}`}><FileText size={28}/></div>
                <div><p className="font-extrabold text-slate-800 truncate max-w-xs">{f.name}</p><p className="text-xs text-slate-400">{f.pageCount} Pages Available</p></div>
             </div>
-            <button onClick={() => onStart(f.id)} className={`px-8 py-3 rounded-2xl text-xs font-black shadow-lg transition-all flex items-center gap-2 ${mode === 'reorder' ? 'bg-blue-600 text-white shadow-blue-100' : 'bg-rose-600 text-white shadow-rose-100'}`}>{mode === 'reorder' ? <LayoutGrid size={16}/> : <Eraser size={16}/>} Load Grid View</button>
+            <button onClick={() => onStart(f.id)} className={`px-8 py-3 rounded-2xl text-xs font-black shadow-lg transition-all flex items-center gap-2 ${mode === 'reorder' ? 'bg-indigo-600 text-white shadow-indigo-100' : 'bg-rose-600 text-white shadow-rose-100'}`}>{mode === 'reorder' ? <LayoutGrid size={16}/> : <Eraser size={16}/>} Load Grid View</button>
           </div>
         ))}
       </div>
@@ -870,7 +882,7 @@ const PageGridInteraction: React.FC<any> = ({ interactionState, files, onStart, 
                 onDragOver={e => e.preventDefault()}
                 onDrop={() => mode === 'reorder' && onDrop(currIdx)}
                 onClick={() => mode === 'delete' && onToggle(origIdx)}
-                className={`relative aspect-[1/1.4] rounded-3xl border-4 overflow-hidden transition-all duration-300 cursor-pointer ${draggingIndex === currIdx ? 'opacity-30 scale-90 border-blue-500 border-dashed' : isSelected ? 'border-rose-500 shadow-2xl scale-95' : 'border-slate-100 bg-white hover:border-blue-400 hover:shadow-2xl hover:z-10 hover:-translate-y-2'}`}
+                className={`relative aspect-[1/1.4] rounded-3xl border-4 overflow-hidden transition-all duration-300 cursor-pointer ${draggingIndex === currIdx ? 'opacity-30 scale-90 border-indigo-500 border-dashed' : isSelected ? 'border-rose-500 shadow-2xl scale-95' : 'border-slate-100 bg-white hover:border-indigo-400 hover:shadow-2xl hover:z-10 hover:-translate-y-2'}`}
               >
                 <img src={interactionState.thumbnails[origIdx]} className={`w-full h-full object-cover transition-all ${isSelected ? 'grayscale opacity-30' : ''}`}/>
                 <div className="absolute top-3 left-3 bg-slate-900/90 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-lg">P{mode === 'reorder' ? currIdx + 1 : origIdx + 1}</div>
