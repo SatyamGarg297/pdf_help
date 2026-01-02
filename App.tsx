@@ -5,26 +5,20 @@ import {
   Layers, 
   Scissors, 
   RefreshCw, 
-  MessageSquareText, 
-  Plus, 
   Trash2, 
   Download, 
   ArrowRight,
   Loader2,
-  Sparkles,
   Info,
   AlertCircle,
   X,
   ChevronUp,
   ChevronDown,
-  CheckCircle2,
   Files,
   Zap,
   Image as ImageIcon,
-  Check,
   ImagePlus,
   Type,
-  ClipboardCopy,
   RotateCw,
   RotateCcw,
   LayoutGrid,
@@ -35,30 +29,16 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Lock,
-  LockOpen,
-  Eye,
-  EyeOff,
-  ShieldCheck,
   ArrowUpRight,
   Settings2,
   History,
   LayoutTemplate
 } from 'lucide-react';
-import { PDFFile, AppTool, ChatMessage } from './types';
-import { getPageCount, mergePDFs, splitPDF, rotatePDF, downloadBlob, splitToIndividualFiles, compressPDF, pdfToImagesZip, imagesToPDF, extractTextFromPdf, getPageThumbnails, reorderPDFPages, removePagesFromPDF, applyWatermarkToPDF, addPageNumbersToPDF, protectPDF, unlockPDF } from './services/pdfService';
+import { PDFFile, AppTool } from './types';
+import { getPageCount, mergePDFs, splitPDF, rotatePDF, downloadBlob, splitToIndividualFiles, pdfToImagesZip, imagesToPDF, extractTextFromPdf, getPageThumbnails, reorderPDFPages, removePagesFromPDF, applyWatermarkToPDF, addPageNumbersToPDF } from './services/pdfService';
 import FileUploader from './components/FileUploader';
-import { GoogleGenAI } from '@google/genai';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
-
-interface CompressionReport {
-  fileId: string;
-  originalSize: number;
-  compressedSize: number;
-  savedBytes: number;
-  percentSaved: number;
-}
 
 interface ConversionProgress {
   fileId: string;
@@ -91,9 +71,7 @@ interface PageNumberConfig {
 const TOOL_CATEGORIES = {
   Assemble: ['merge', 'split', 'reorder', 'delete-pages'],
   Modify: ['rotate', 'watermark', 'page-numbering'],
-  Convert: ['pdf-to-image', 'image-to-pdf', 'pdf-to-text', 'compress'],
-  Security: ['protect', 'unlock'],
-  Intelligence: ['ai-chat']
+  Convert: ['pdf-to-image', 'image-to-pdf', 'pdf-to-text']
 } as const;
 
 const App: React.FC = () => {
@@ -101,11 +79,7 @@ const App: React.FC = () => {
   const [activeTool, setActiveTool] = useState<AppTool>('merge');
   const [isProcessing, setIsProcessing] = useState(false);
   const [splitRanges, setSplitRanges] = useState<string>('');
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-  const [userInput, setUserInput] = useState('');
-  const [isChatLoading, setIsChatLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [compressionReports, setCompressionReports] = useState<Record<string, CompressionReport>>({});
   const [imageFormat, setImageFormat] = useState<'png' | 'jpeg'>('png');
   const [conversionProgress, setConversionProgress] = useState<Record<string, ConversionProgress>>({});
   const [extractedTexts, setExtractedTexts] = useState<Record<string, string>>({});
@@ -124,8 +98,6 @@ const App: React.FC = () => {
     fontSize: 12,
     color: '#000000'
   });
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (error) {
@@ -201,11 +173,9 @@ const App: React.FC = () => {
   const clearFiles = () => {
     files.forEach(f => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
     setFiles([]);
-    setCompressionReports({});
     setConversionProgress({});
     setExtractedTexts({});
     setInteractionState(null);
-    setPassword('');
   };
 
   const handleMerge = async () => {
@@ -300,22 +270,6 @@ const App: React.FC = () => {
     }
   };
 
-  const handleCompress = async (fileId: string) => {
-    const target = files.find(f => f.id === fileId);
-    if (!target) return;
-    setIsProcessing(true);
-    try {
-      const result = await compressPDF(target.file);
-      const originalSize = target.file.size;
-      const compressedSize = result.byteLength;
-      setCompressionReports(prev => ({
-        ...prev,
-        [fileId]: { fileId, originalSize, compressedSize, savedBytes: originalSize - compressedSize, percentSaved: Math.max(0, ((originalSize - compressedSize) / originalSize) * 100) }
-      }));
-      downloadBlob(result, `optimized_${target.name}`);
-    } catch (error) { setError(`Failed to compress "${target.name}".`); } finally { setIsProcessing(false); }
-  };
-
   const handleConvertToImages = async (fileId: string) => {
     const target = files.find(f => f.id === fileId);
     if (!target) return;
@@ -392,21 +346,6 @@ const App: React.FC = () => {
     } catch (error) { setError('Rotation failed.'); } finally { setIsProcessing(false); }
   };
 
-  const handleAIChat = async () => {
-    if (!userInput.trim() || files.length === 0) return;
-    const newMessage: ChatMessage = { role: 'user', content: userInput };
-    setChatHistory(prev => [...prev, newMessage]);
-    setUserInput('');
-    setIsChatLoading(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const model = 'gemini-3-flash-preview';
-      const prompt = `User uploaded: ${files.map(f => `${f.name} (${f.pageCount} pgs)`).join(', ')}. Question: "${userInput}"`;
-      const response = await ai.models.generateContent({ model, contents: prompt });
-      setChatHistory(prev => [...prev, { role: 'assistant', content: response.text || "No response generated." }]);
-    } catch (error) { setChatHistory(prev => [...prev, { role: 'assistant', content: 'Gemini error. Check connection.' }]); } finally { setIsChatLoading(false); }
-  };
-
   const handleApplyWatermark = async (fileId: string) => {
     const target = files.find(f => f.id === fileId);
     if (!target || !watermarkConfig.text.trim()) return;
@@ -425,26 +364,6 @@ const App: React.FC = () => {
       const result = await addPageNumbersToPDF(target.file, pageNumberConfig);
       downloadBlob(result, `numbered_${target.name}`);
     } catch (error) { setError('Numbering failed.'); } finally { setIsProcessing(false); }
-  };
-
-  const handleProtect = async (fileId: string) => {
-    const target = files.find(f => f.id === fileId);
-    if (!target || !password.trim()) return;
-    setIsProcessing(true);
-    try {
-      const result = await protectPDF(target.file, password);
-      downloadBlob(result, `protected_${target.name}`);
-    } catch (error) { setError('Encryption failed.'); } finally { setIsProcessing(false); }
-  };
-
-  const handleUnlock = async (fileId: string) => {
-    const target = files.find(f => f.id === fileId);
-    if (!target || !password.trim()) return;
-    setIsProcessing(true);
-    try {
-      const result = await unlockPDF(target.file, password);
-      downloadBlob(result, `unlocked_${target.name}`);
-    } catch (error: any) { setError(error.message.includes('password') ? 'Wrong password.' : 'Unlock failed.'); } finally { setIsProcessing(false); }
   };
 
   return (
@@ -517,7 +436,6 @@ const App: React.FC = () => {
                       onClick={() => { setActiveTool(tool as AppTool); clearFiles(); }}
                       icon={getToolIcon(tool as AppTool)}
                       label={tool.replace(/-/g, ' ')}
-                      isAi={tool === 'ai-chat'}
                     />
                   ))}
                 </div>
@@ -554,7 +472,7 @@ const App: React.FC = () => {
           <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden flex flex-col min-h-[600px] flex-1">
             <div className="border-b border-slate-100 px-8 py-6 flex items-center justify-between bg-slate-50/30">
               <div className="flex items-center gap-4">
-                <div className={`p-2.5 rounded-xl ${activeTool === 'ai-chat' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
+                <div className={`p-2.5 rounded-xl bg-blue-50 text-blue-600`}>
                    {getToolIcon(activeTool, 22)}
                 </div>
                 <div>
@@ -580,7 +498,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex-1 p-8 overflow-y-auto custom-scrollbar relative">
-              {files.length === 0 && activeTool !== 'ai-chat' ? (
+              {files.length === 0 ? (
                 <EmptyState tool={activeTool} />
               ) : (
                 <div className="space-y-6 max-w-5xl mx-auto">
@@ -642,28 +560,12 @@ const App: React.FC = () => {
                      <PageNumberView files={files} config={pageNumberConfig} setConfig={setPageNumberConfig} onApply={handleApplyPageNumbers} />
                    )}
 
-                   {activeTool === 'protect' && (
-                     <SecurityView mode="protect" files={files} password={password} setPassword={setPassword} showPassword={showPassword} setShowPassword={setShowPassword} onApply={handleProtect} />
-                   )}
-
-                   {activeTool === 'unlock' && (
-                     <SecurityView mode="unlock" files={files} password={password} setPassword={setPassword} showPassword={showPassword} setShowPassword={setShowPassword} onApply={handleUnlock} />
-                   )}
-
-                   {activeTool === 'compress' && (
-                     <CompressView files={files} reports={compressionReports} onCompress={handleCompress} isProcessing={isProcessing} />
-                   )}
-
                    {activeTool === 'pdf-to-image' && (
                      <PdfToImageView files={files} format={imageFormat} setFormat={setImageFormat} progress={conversionProgress} onConvert={handleConvertToImages} />
                    )}
 
                    {activeTool === 'pdf-to-text' && (
                      <PdfToTextView files={files} texts={extractedTexts} progress={conversionProgress} onExtract={handleExtractText} />
-                   )}
-
-                   {activeTool === 'ai-chat' && (
-                     <AiChatView history={chatHistory} userInput={userInput} setUserInput={setUserInput} loading={isChatLoading} onSend={handleAIChat} files={files} />
                    )}
                 </div>
               )}
@@ -677,12 +579,12 @@ const App: React.FC = () => {
 
 // --- Subcomponents ---
 
-const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string; isAi?: boolean }> = ({ active, onClick, icon, label, isAi }) => (
+const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
   <button 
     onClick={onClick}
     className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-all group ${
       active 
-        ? (isAi ? 'bg-amber-600 text-white shadow-xl shadow-amber-200' : 'bg-blue-600 text-white shadow-xl shadow-blue-200')
+        ? 'bg-blue-600 text-white shadow-xl shadow-blue-200'
         : 'text-slate-500 hover:bg-white hover:shadow-md hover:text-slate-900'
     }`}
   >
@@ -890,69 +792,6 @@ const PageNumberView: React.FC<any> = ({ files, config, setConfig, onApply }) =>
   </div>
 );
 
-const SecurityView: React.FC<any> = ({ mode, files, password, setPassword, showPassword, setShowPassword, onApply }) => (
-  <div className="space-y-6">
-    <ToolHint icon={mode === 'protect' ? <Lock size={18}/> : <LockOpen size={18}/>} title={mode === 'protect' ? 'Encrypt Vault' : 'Decrypt Vault'} description={mode === 'protect' ? 'Seal your PDF with a master password. Required for viewing later.' : 'Purge passwords from an encrypted file to make it public.'} />
-    <div className="bg-white border-2 border-slate-100 p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/40 space-y-6 text-center">
-       <div className="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto text-blue-600"><Lock size={32}/></div>
-       <div className="max-w-md mx-auto space-y-4">
-          <h3 className="text-xl font-extrabold text-slate-800">{mode === 'protect' ? 'Set Master Password' : 'Enter Current Password'}</h3>
-          <div className="relative group">
-             <input 
-              type={showPassword ? "text" : "password"} 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
-              placeholder="••••••••••••"
-              className="w-full text-center bg-slate-50 border-2 border-slate-100 px-6 py-4 rounded-3xl text-2xl font-mono focus:border-blue-400 focus:bg-white focus:outline-none transition-all"
-             />
-             <button onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-blue-500">{showPassword ? <EyeOff size={22}/> : <Eye size={22}/>}</button>
-          </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Passwords are never uploaded to any server.</p>
-       </div>
-    </div>
-    {files.map((f: any) => (
-      <div key={f.id} className="p-6 bg-white border border-slate-100 rounded-3xl flex items-center justify-between shadow-sm">
-        <h4 className="font-bold text-slate-800 truncate max-w-sm">{f.name}</h4>
-        <button onClick={() => onApply(f.id)} disabled={!password.trim()} className="px-8 py-3 bg-blue-600 text-white rounded-2xl text-xs font-black shadow-lg shadow-blue-100 hover:bg-blue-700 disabled:opacity-30 transition-all">{mode === 'protect' ? 'Encrypt & Seal' : 'Unlock & Save'}</button>
-      </div>
-    ))}
-  </div>
-);
-
-const CompressView: React.FC<any> = ({ files, reports, onCompress, isProcessing }) => (
-  <div className="space-y-6">
-    <ToolHint icon={<Zap size={18}/>} title="Lossless Optimization" description="Reduces file size by pruning redundant metadata and optimizing internal font mappings." />
-    {files.map((f: any) => {
-      const report = reports[f.id];
-      return (
-        <div key={f.id} className={`p-6 border-2 rounded-[2rem] transition-all bg-white shadow-sm flex flex-col gap-5 ${report ? 'border-emerald-200 bg-emerald-50/10' : 'border-slate-100'}`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${report ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                {report ? <CheckCircle2 size={28}/> : <FileText size={28}/>}
-              </div>
-              <div>
-                <p className="font-extrabold text-slate-800 truncate max-w-xs">{f.name}</p>
-                <p className="text-xs font-bold text-slate-400 uppercase">Original: {(f.size/1024/1024).toFixed(2)} MB</p>
-              </div>
-            </div>
-            <button onClick={() => onCompress(f.id)} disabled={isProcessing} className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all ${report ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100' : 'bg-blue-600 text-white shadow-lg shadow-blue-100'}`}>
-              {report ? 'Re-Optimize' : 'Optimize Size'}
-            </button>
-          </div>
-          {report && (
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-2">
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-[9px] font-black text-slate-400 uppercase mb-1">New Size</p><p className="text-sm font-black text-slate-700">{(report.compressedSize/1024/1024).toFixed(2)} MB</p></div>
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><p className="text-[9px] font-black text-slate-400 uppercase mb-1">Saved</p><p className="text-sm font-black text-slate-700">{(report.savedBytes/1024).toFixed(1)} KB</p></div>
-              <div className="bg-emerald-500 p-4 rounded-2xl shadow-lg shadow-emerald-100 flex flex-col items-center justify-center"><p className="text-[9px] font-black text-emerald-100 uppercase mb-1">Reduction</p><p className="text-lg font-black text-white">{report.percentSaved.toFixed(1)}%</p></div>
-            </div>
-          )}
-        </div>
-      );
-    })}
-  </div>
-);
-
 const PdfToImageView: React.FC<any> = ({ files, format, setFormat, progress, onConvert }) => (
   <div className="space-y-6">
     <ToolHint icon={<ImageIcon size={18}/>} title="Raster Export" description="Converts PDF pages into static images. Ideal for presentations or social sharing." />
@@ -998,33 +837,6 @@ const PdfToTextView: React.FC<any> = ({ files, texts, progress, onExtract }) => 
         </div>
       );
     })}
-  </div>
-);
-
-const AiChatView: React.FC<any> = ({ history, userInput, setUserInput, loading, onSend, files }) => (
-  <div className="h-[650px] flex flex-col gap-6">
-    <ToolHint icon={<Sparkles size={18} className="text-amber-500 fill-amber-500"/>} title="AI Document Intelligence" description="Powered by Gemini. Upload your PDFs and ask about their content, summaries, or specific data points." />
-    <div className="flex-1 overflow-y-auto space-y-6 pr-4 custom-scrollbar">
-      {history.length === 0 && (
-        <div className="h-full flex flex-col items-center justify-center text-center px-10 gap-6">
-           <div className="p-8 bg-amber-50 rounded-full float-animation shadow-2xl shadow-amber-100 border border-amber-100"><Sparkles size={48} className="text-amber-500"/></div>
-           <div className="space-y-2">
-             <h3 className="text-2xl font-extrabold text-slate-800">Ready for Analysis</h3>
-             <p className="text-sm text-slate-500 max-w-sm font-medium">I've indexed your {files.length} active documents. What would you like to know?</p>
-           </div>
-        </div>
-      )}
-      {history.map((msg: any, i: number) => (
-        <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-           <div className={`max-w-[85%] px-6 py-4 rounded-[2rem] text-sm font-medium leading-relaxed shadow-sm ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none border border-slate-200'}`}>{msg.content}</div>
-        </div>
-      ))}
-      {loading && <div className="flex justify-start"><div className="bg-slate-100 px-6 py-4 rounded-[2rem] rounded-bl-none border border-slate-200 flex items-center gap-3"><div className="flex gap-1"><span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce"></span><span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]"></span><span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.4s]"></span></div><span className="text-xs font-black text-slate-400 uppercase tracking-widest">Alchemy Analyzing...</span></div></div>}
-    </div>
-    <div className="flex gap-3 bg-white p-3 rounded-[2rem] border-2 border-slate-100 shadow-2xl focus-within:border-blue-400 focus-within:ring-8 focus-within:ring-blue-50 transition-all">
-      <input value={userInput} onChange={e => setUserInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && onSend()} placeholder="Analyze these documents..." className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-4 font-bold placeholder:text-slate-300"/>
-      <button onClick={onSend} disabled={loading || !userInput.trim()} className="p-3.5 bg-slate-900 text-white rounded-full hover:bg-black disabled:opacity-30 transition-all shadow-xl active:scale-95"><ArrowRight size={20}/></button>
-    </div>
   </div>
 );
 
@@ -1083,13 +895,9 @@ const getToolIcon = (tool: AppTool, size = 18) => {
     case 'rotate': return <RefreshCw size={size}/>;
     case 'watermark': return <Stamp size={size}/>;
     case 'page-numbering': return <Hash size={size}/>;
-    case 'compress': return <Zap size={size}/>;
     case 'pdf-to-image': return <ImageIcon size={size}/>;
     case 'image-to-pdf': return <ImagePlus size={size}/>;
     case 'pdf-to-text': return <Type size={size}/>;
-    case 'ai-chat': return <Sparkles size={size}/>;
-    case 'protect': return <Lock size={size}/>;
-    case 'unlock': return <LockOpen size={size}/>;
     default: return <FileText size={size}/>;
   }
 };

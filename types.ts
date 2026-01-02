@@ -10,7 +10,7 @@ export interface PDFFile {
   previewUrl?: string;
 }
 
-export type AppTool = 'merge' | 'split' | 'reorder' | 'delete-pages' | 'rotate' | 'watermark' | 'page-numbering' | 'protect' | 'unlock' | 'compress' | 'pdf-to-image' | 'image-to-pdf' | 'pdf-to-text' | 'ai-chat';
+export type AppTool = 'merge' | 'split' | 'reorder' | 'delete-pages' | 'rotate' | 'watermark' | 'page-numbering' | 'pdf-to-image' | 'image-to-pdf' | 'pdf-to-text';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';

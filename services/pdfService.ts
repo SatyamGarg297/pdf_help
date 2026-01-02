@@ -170,31 +170,6 @@ export const addPageNumbersToPDF = async (
   return await pdfDoc.save();
 };
 
-/**
- * Protects PDF with a password
- */
-export const protectPDF = async (file: File, password: string): Promise<Uint8Array> => {
-  const bytes = await file.arrayBuffer();
-  const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
-  
-  // Save with password encryption
-  return await pdfDoc.save({
-    userPassword: password,
-    ownerPassword: password, // For simplicity we set both same
-  });
-};
-
-/**
- * Unlocks a password-protected PDF
- */
-export const unlockPDF = async (file: File, password: string): Promise<Uint8Array> => {
-  const bytes = await file.arrayBuffer();
-  // Loading with password performs the decryption
-  const pdfDoc = await PDFDocument.load(bytes, { password });
-  // Saving without encryption parameters generates a decrypted PDF
-  return await pdfDoc.save();
-};
-
 export const mergePDFs = async (files: File[]): Promise<Uint8Array> => {
   const mergedPdf = await PDFDocument.create();
   
@@ -288,16 +263,6 @@ export const splitToIndividualFiles = async (file: File): Promise<{ name: string
     });
   }
   return results;
-};
-
-export const compressPDF = async (file: File): Promise<Uint8Array> => {
-  const bytes = await file.arrayBuffer();
-  const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
-  return await pdfDoc.save({
-    useObjectStreams: true,
-    addDefaultPage: false,
-    updateFieldAppearances: true
-  });
 };
 
 export const rotatePDF = async (file: File, rotation: number, pageNumbers?: number[]): Promise<Uint8Array> => {
