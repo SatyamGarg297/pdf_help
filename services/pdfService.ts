@@ -354,7 +354,7 @@ export const downloadBlob = (data: Uint8Array | Blob | string, fileName: string)
   } else if (data instanceof Blob) {
     blob = data;
   } else {
-    blob = new Blob([data], { type: 'application/pdf' });
+    blob = new Blob([data as BlobPart], { type: 'application/pdf' });
   }
   
   const url = URL.createObjectURL(blob);

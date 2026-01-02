@@ -1,5 +1,6 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { 
   FileText, 
   Layers, 
@@ -585,6 +586,7 @@ const App: React.FC = () => {
             <span className="text-[11px] font-black uppercase tracking-widest text-slate-800 italic">pdf_help utility</span>
          </div>
       </footer>
+      <Analytics />
     </div>
   );
 };
