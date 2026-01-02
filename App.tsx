@@ -1,6 +1,5 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Analytics } from '@vercel/analytics/react';
 import { 
   FileText, 
   Layers, 
@@ -33,10 +32,17 @@ import {
   History,
   LayoutTemplate,
   HelpCircle,
-  ShieldCheck
+  ShieldCheck,
+  Maximize2
 } from 'lucide-react';
 import { PDFFile, AppTool } from './types';
-import { getPageCount, mergePDFs, splitPDF, rotatePDF, downloadBlob, splitToIndividualFiles, pdfToImagesZip, imagesToPDF, extractTextFromPdf, getPageThumbnails, reorderPDFPages, removePagesFromPDF, applyWatermarkToPDF, addPageNumbersToPDF } from './services/pdfService';
+import { 
+  getPageCount, mergePDFs, splitPDF, rotatePDF, downloadBlob, 
+  splitToIndividualFiles, pdfToImagesZip, imagesToPDF, 
+  extractTextFromPdf, getPageThumbnails, reorderPDFPages, 
+  removePagesFromPDF, applyWatermarkToPDF, addPageNumbersToPDF,
+  ImageToPdfLayout 
+} from './services/pdfService';
 import FileUploader from './components/FileUploader';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -82,6 +88,7 @@ const App: React.FC = () => {
   const [splitRanges, setSplitRanges] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [imageFormat, setImageFormat] = useState<'png' | 'jpeg'>('png');
+  const [imagePdfLayout, setImagePdfLayout] = useState<ImageToPdfLayout>('original');
   const [conversionProgress, setConversionProgress] = useState<Record<string, ConversionProgress>>({});
   const [extractedTexts, setExtractedTexts] = useState<Record<string, string>>({});
   const [interactionState, setInteractionState] = useState<PageInteractionState | null>(null);
@@ -186,11 +193,26 @@ const App: React.FC = () => {
       const result = await mergePDFs(files.map(f => f.file));
       downloadBlob(result, `merged_help_${Date.now()}.pdf`);
     } catch (error) {
-      setError('Failed to merge PDFs. They might be encrypted.');
+      setError('Failed to merge PDFs.');
     } finally {
       setIsProcessing(false);
     }
   };
+
+  const handleImagesToPDF = async () => {
+    if (files.length === 0) return;
+    setIsProcessing(true);
+    try {
+      const result = await imagesToPDF(files.map(f => f.file), imagePdfLayout);
+      downloadBlob(result, `batch_images_${Date.now()}.pdf`);
+    } catch (error) {
+      setError('Failed to convert images.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // ... (Other handlers remain unchanged)
 
   const handleStartThumbnailOperation = async (fileId: string) => {
     const target = files.find(f => f.id === fileId);
@@ -256,19 +278,6 @@ const App: React.FC = () => {
     newIndices.splice(dropIndex, 0, movedItem);
     setInteractionState({ ...interactionState, pageIndices: newIndices });
     setDraggingPageIndex(null);
-  };
-
-  const handleImagesToPDF = async () => {
-    if (files.length === 0) return;
-    setIsProcessing(true);
-    try {
-      const result = await imagesToPDF(files.map(f => f.file));
-      downloadBlob(result, `batch_images_${Date.now()}.pdf`);
-    } catch (error) {
-      setError('Failed to convert images.');
-    } finally {
-      setIsProcessing(false);
-    }
   };
 
   const handleConvertToImages = async (fileId: string) => {
@@ -369,7 +378,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Dynamic Header */}
+      {/* Header */}
       <header className="sticky top-0 z-50 glass-panel border-b border-slate-200/50 px-8 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3 group cursor-pointer">
@@ -397,16 +406,11 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Global Processing Loader */}
+      {/* Loader & Error */}
       {isProcessing && files.length > 0 && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/10 backdrop-blur-[2px]">
           <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-4 animate-in zoom-in duration-300 border border-slate-200">
-            <div className="relative">
-              <Loader2 className="animate-spin text-indigo-600" size={48} strokeWidth={2.5}/>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <FileText size={16} className="text-indigo-400 fill-indigo-400"/>
-              </div>
-            </div>
+            <Loader2 className="animate-spin text-indigo-600" size={48} strokeWidth={2.5}/>
             <div className="text-center">
               <p className="font-extrabold text-slate-900 text-lg">Optimizing...</p>
               <p className="text-sm font-medium text-slate-500">Executing local browser operations</p>
@@ -417,10 +421,10 @@ const App: React.FC = () => {
 
       {error && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[60] w-full max-w-xl px-4 animate-in slide-in-from-top duration-500">
-          <div className="bg-rose-50 border-l-4 border-rose-500 text-rose-800 px-6 py-4 rounded-2xl shadow-2xl shadow-rose-200 flex items-center gap-4">
-            <div className="bg-rose-500 p-1.5 rounded-full"><AlertCircle className="text-white" size={18} /></div>
+          <div className="bg-rose-50 border-l-4 border-rose-500 text-rose-800 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4">
+            <AlertCircle className="text-rose-500" size={18} />
             <div className="flex-1 text-sm font-bold">{error}</div>
-            <button onClick={() => setError(null)} className="text-rose-300 hover:text-rose-600 transition-colors"><X size={20} /></button>
+            <button onClick={() => setError(null)} className="text-rose-300 hover:text-rose-600"><X size={20} /></button>
           </div>
         </div>
       )}
@@ -506,8 +510,45 @@ const App: React.FC = () => {
                 <EmptyState tool={activeTool} />
               ) : (
                 <div className="space-y-6 max-w-5xl mx-auto">
-                   {/* Assembly Views */}
-                   {(activeTool === 'merge' || activeTool === 'image-to-pdf') && (
+                   {/* Tool Views */}
+                   {activeTool === 'image-to-pdf' && (
+                     <div className="space-y-6">
+                        <ToolHint icon={<Maximize2 size={18}/>} title="Page Layout Config" description="Specify the target paper size. Images will be automatically scaled to fit within these bounds." />
+                        <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 flex items-center justify-between">
+                           <p className="text-sm font-bold text-slate-700">Target PDF Layout</p>
+                           <div className="flex bg-slate-200/50 p-1 rounded-2xl w-fit">
+                              {[
+                                { id: 'original', label: 'Fit to Image' },
+                                { id: 'A4_PORTRAIT', label: 'A4 Portrait' },
+                                { id: 'A4_LANDSCAPE', label: 'A4 Landscape' }
+                              ].map(layout => (
+                                <button 
+                                  key={layout.id} 
+                                  onClick={() => setImagePdfLayout(layout.id as ImageToPdfLayout)} 
+                                  className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${imagePdfLayout === layout.id ? 'bg-white shadow-lg text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                  {layout.label}
+                                </button>
+                              ))}
+                           </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3">
+                          {files.map((f, i) => (
+                            <FileCard 
+                              key={f.id} 
+                              file={f} 
+                              index={i} 
+                              total={files.length}
+                              onRemove={() => removeFile(f.id)}
+                              onUp={() => moveFile(i, 'up')}
+                              onDown={() => moveFile(i, 'down')}
+                            />
+                          ))}
+                        </div>
+                     </div>
+                   )}
+
+                   {activeTool === 'merge' && (
                      <div className="space-y-4">
                         <ToolHint icon={<LayoutTemplate size={18}/>} title="Execution Sequence" description="Adjust file priority. Processing occurs from top to bottom." />
                         <div className="grid grid-cols-1 gap-3">
@@ -586,12 +627,11 @@ const App: React.FC = () => {
             <span className="text-[11px] font-black uppercase tracking-widest text-slate-800 italic">pdf_help utility</span>
          </div>
       </footer>
-      <Analytics />
     </div>
   );
 };
 
-// --- Subcomponents ---
+// ... (Subcomponents remain largely unchanged, NavButton, ToolHeaderActions, EmptyState, FileCard, ToolHint, SplitView, RotateView, WatermarkView, PageNumberView, PdfToImageView, PdfToTextView, PageGridInteraction, getToolIcon)
 
 const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
   <button 
@@ -834,7 +874,7 @@ const PdfToImageView: React.FC<any> = ({ files, format, setFormat, progress, onC
 
 const PdfToTextView: React.FC<any> = ({ files, texts, progress, onExtract }) => (
   <div className="space-y-6">
-    <ToolHint icon={<Type size={18}/>} title="Deep Text Extraction" description="Scans document content layers to reconstruct plaintext. Note: Does not perform OCR on scanned images." />
+    <ToolHint icon={<Type size={18}/>} title="Deep Text Extraction" description="Scans document content layers to reconstruct plaintext." />
     {files.map((f: any) => {
       const text = texts[f.id];
       const prog = progress[f.id];
@@ -872,7 +912,7 @@ const PageGridInteraction: React.FC<any> = ({ interactionState, files, onStart, 
   }
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-       <ToolHint icon={mode === 'reorder' ? <LayoutGrid size={18}/> : <Eraser size={18}/>} title={mode === 'reorder' ? 'Interactive Reorder' : 'Selection Trimmer'} description={mode === 'reorder' ? 'Drag and drop cards to change page positions.' : 'Click to mark pages for deletion. A new PDF will be created without them.'} />
+       <ToolHint icon={mode === 'reorder' ? <LayoutGrid size={18}/> : <Eraser size={18}/>} title={mode === 'reorder' ? 'Interactive Reorder' : 'Selection Trimmer'} description={mode === 'reorder' ? 'Drag and drop cards to change page positions.' : 'Click to mark pages for deletion.'} />
        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
           {interactionState.pageIndices.map((origIdx: number, currIdx: number) => {
             const isSelected = interactionState.selectedIndices?.has(origIdx);
@@ -897,8 +937,6 @@ const PageGridInteraction: React.FC<any> = ({ interactionState, files, onStart, 
     </div>
   );
 };
-
-// --- Utilities ---
 
 const getToolIcon = (tool: AppTool, size = 18) => {
   switch(tool) {
