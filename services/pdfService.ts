@@ -147,7 +147,6 @@ export const imagesToPDF = async (imageFiles: File[], layout: ImageToPdfLayout =
       } else if (file.type === 'image/png') {
         image = await pdfDoc.embedPng(arrayBuffer);
       } else {
-        // Handle other formats via canvas
         const img = new Image();
         const url = URL.createObjectURL(file);
         img.src = url;
@@ -182,13 +181,10 @@ export const imagesToPDF = async (imageFiles: File[], layout: ImageToPdfLayout =
       }
 
       const page = pdfDoc.addPage([pageWidth, pageHeight]);
-
-      // Calculate scaling to fit image onto page while keeping aspect ratio
       const scale = Math.min(pageWidth / imgDims.width, pageHeight / imgDims.height);
       const drawWidth = imgDims.width * scale;
       const drawHeight = imgDims.height * scale;
 
-      // Center the image on the page
       page.drawImage(image, {
         x: (pageWidth - drawWidth) / 2,
         y: (pageHeight - drawHeight) / 2,
@@ -199,7 +195,6 @@ export const imagesToPDF = async (imageFiles: File[], layout: ImageToPdfLayout =
       console.error('Error embedding image:', file.name, e);
     }
   }
-  
   return await pdfDoc.save();
 };
 
@@ -290,6 +285,10 @@ export const pdfToImagesZip = async (
   return await zip.generateAsync({ type: 'blob' });
 };
 
+/**
+ * Downloads a resource by creating a Blob and triggering a link click.
+ * Note: Uses any cast for the Blob constructor to bypass strict TS SharedArrayBuffer checks.
+ */
 export const downloadBlob = (data: Uint8Array | Blob | string, fileName: string) => {
   let blob: Blob;
   if (typeof data === 'string') {
@@ -297,7 +296,8 @@ export const downloadBlob = (data: Uint8Array | Blob | string, fileName: string)
   } else if (data instanceof Blob) {
     blob = data;
   } else {
-    blob = new Blob([data], { type: 'application/pdf' });
+    // Cast to any to avoid "Uint8Array<ArrayBufferLike> not assignable to BlobPart" conflict
+    blob = new Blob([data as any], { type: 'application/pdf' });
   }
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

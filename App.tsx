@@ -13,7 +13,6 @@ import {
   X,
   ChevronUp,
   ChevronDown,
-  Zap,
   Image as ImageIcon,
   ImagePlus,
   Type,
@@ -93,6 +92,7 @@ const App: React.FC = () => {
   const [extractedTexts, setExtractedTexts] = useState<Record<string, string>>({});
   const [interactionState, setInteractionState] = useState<PageInteractionState | null>(null);
   const [draggingPageIndex, setDraggingPageIndex] = useState<number | null>(null);
+  
   const [watermarkConfig, setWatermarkConfig] = useState<WatermarkConfig>({
     text: 'CONFIDENTIAL',
     fontSize: 50,
@@ -100,6 +100,7 @@ const App: React.FC = () => {
     rotation: -45,
     color: '#000000'
   });
+  
   const [pageNumberConfig, setPageNumberConfig] = useState<PageNumberConfig>({
     position: 'bottom',
     alignment: 'center',
@@ -155,7 +156,7 @@ const App: React.FC = () => {
       );
       setFiles((prev) => [...prev, ...processedFiles]);
     } catch (err) {
-      setError("Failed to process some files. They might be corrupted or restricted.");
+      setError("Failed to process some files.");
     } finally {
       setIsProcessing(false);
     }
@@ -204,15 +205,13 @@ const App: React.FC = () => {
     setIsProcessing(true);
     try {
       const result = await imagesToPDF(files.map(f => f.file), imagePdfLayout);
-      downloadBlob(result, `batch_images_${Date.now()}.pdf`);
+      downloadBlob(result, `compiled_images_${Date.now()}.pdf`);
     } catch (error) {
       setError('Failed to convert images.');
     } finally {
       setIsProcessing(false);
     }
   };
-
-  // ... (Other handlers remain unchanged)
 
   const handleStartThumbnailOperation = async (fileId: string) => {
     const target = files.find(f => f.id === fileId);
@@ -224,7 +223,7 @@ const App: React.FC = () => {
       });
       setInteractionState({ fileId, pageIndices: Array.from({ length: target.pageCount }, (_, i) => i), thumbnails, selectedIndices: new Set() });
     } catch (error) {
-      setError('Failed to generate page thumbnails.');
+      setError('Thumbnail generation failed.');
     } finally {
       setIsProcessing(false);
       setConversionProgress(prev => { const next = { ...prev }; delete next[fileId]; return next; });
@@ -378,7 +377,6 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header */}
       <header className="sticky top-0 z-50 glass-panel border-b border-slate-200/50 px-8 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3 group cursor-pointer">
@@ -406,7 +404,6 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Loader & Error */}
       {isProcessing && files.length > 0 && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/10 backdrop-blur-[2px]">
           <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-4 animate-in zoom-in duration-300 border border-slate-200">
@@ -430,7 +427,6 @@ const App: React.FC = () => {
       )}
 
       <main className="flex-1 flex flex-col lg:flex-row max-w-[1600px] mx-auto w-full p-8 gap-8">
-        {/* Navigation Sidebar */}
         <aside className="w-full lg:w-72 shrink-0 space-y-8">
           <div className="space-y-6">
             {Object.entries(TOOL_CATEGORIES).map(([cat, tools]) => (
@@ -466,7 +462,6 @@ const App: React.FC = () => {
           </div>
         </aside>
 
-        {/* Workspace Area */}
         <div className="flex-1 flex flex-col gap-6">
           {!interactionState && (
             <div className="bg-white/40 border-2 border-dashed border-slate-300/50 rounded-[2.5rem] p-3 shadow-sm hover:border-indigo-400 transition-all group overflow-hidden">
@@ -510,7 +505,6 @@ const App: React.FC = () => {
                 <EmptyState tool={activeTool} />
               ) : (
                 <div className="space-y-6 max-w-5xl mx-auto">
-                   {/* Tool Views */}
                    {activeTool === 'image-to-pdf' && (
                      <div className="space-y-6">
                         <ToolHint icon={<Maximize2 size={18}/>} title="Page Layout Config" description="Specify the target paper size. Images will be automatically scaled to fit within these bounds." />
@@ -631,8 +625,6 @@ const App: React.FC = () => {
   );
 };
 
-// ... (Subcomponents remain largely unchanged, NavButton, ToolHeaderActions, EmptyState, FileCard, ToolHint, SplitView, RotateView, WatermarkView, PageNumberView, PdfToImageView, PdfToTextView, PageGridInteraction, getToolIcon)
-
 const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
   <button 
     onClick={onClick}
@@ -686,7 +678,7 @@ const EmptyState: React.FC<{ tool: string }> = ({ tool }) => (
     </div>
     <div className="max-w-sm space-y-2">
       <h3 className="text-2xl font-extrabold text-slate-800 italic tracking-tight">Workbench Ready</h3>
-      <p className="text-slate-500 font-medium text-sm leading-relaxed">Drop your target {tool === 'image-to-pdf' ? 'images' : 'PDF files'} to initiate the local browser engine.</p>
+      <p className="text-slate-500 font-medium text-sm leading-relaxed">Drop your target {tool === 'image-to-pdf' ? 'images' : 'PDF files'}</p>
     </div>
   </div>
 );
@@ -764,7 +756,7 @@ const SplitView: React.FC<any> = ({ files, splitRanges, setSplitRanges, parsedPa
 
 const RotateView: React.FC<any> = ({ files, splitRanges, setSplitRanges, onRotate }) => (
   <div className="space-y-6">
-     <ToolHint icon={<RefreshCw size={18}/>} title="Orientation Adjust" description="Apply rotation to the entire document or a specific subset of pages defined in the range below." />
+     <ToolHint icon={<RefreshCw size={18}/>} title="Orientation Adjust" description="Apply rotation to the entire document or a specific subset of pages." />
      <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Target Range (Leave empty for All)</label>
         <input type="text" value={splitRanges} onChange={(e) => setSplitRanges(e.target.value)} placeholder="e.g. 1-2, 5" className="w-full bg-white border border-slate-200 px-4 py-2.5 rounded-xl font-bold focus:ring-2 focus:ring-indigo-100 focus:outline-none"/>
@@ -791,7 +783,7 @@ const RotateBtn: React.FC<any> = ({ icon, label, onClick }) => (
 
 const WatermarkView: React.FC<any> = ({ files, config, setConfig, onApply }) => (
   <div className="space-y-6">
-    <ToolHint icon={<Stamp size={18}/>} title="Stamping Logic" description="Overlays text. Perfect for 'DRAFT', 'CONFIDENTIAL', or branding purposes across every page." />
+    <ToolHint icon={<Stamp size={18}/>} title="Stamping Logic" description="Overlays text for DRAFT or CONFIDENTIAL labels across all pages." />
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 bg-slate-50 rounded-[2.5rem] border border-slate-200">
       <div className="space-y-4">
         <div><label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Stamp Text</label><input value={config.text} onChange={e => setConfig({...config, text: e.target.value})} className="w-full px-5 py-3 rounded-2xl border border-slate-200 font-bold focus:ring-4 focus:ring-indigo-100 outline-none"/></div>
@@ -807,8 +799,8 @@ const WatermarkView: React.FC<any> = ({ files, config, setConfig, onApply }) => 
     </div>
     {files.map((f: any) => (
       <div key={f.id} className="p-6 bg-white border border-slate-100 rounded-3xl flex items-center justify-between shadow-sm">
-        <div className="truncate max-w-sm"><h4 className="font-bold text-slate-800 truncate">{f.name}</h4><p className="text-xs text-slate-400">Ready for stamp</p></div>
-        <button onClick={() => onApply(f.id)} className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-black shadow-lg shadow-indigo-100 hover:scale-105 transition-transform">Apply Stamp</button>
+        <h4 className="font-bold text-slate-800 truncate max-w-sm">{f.name}</h4>
+        <button onClick={() => onApply(f.id)} className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-black shadow-lg">Apply Stamp</button>
       </div>
     ))}
   </div>
@@ -816,19 +808,19 @@ const WatermarkView: React.FC<any> = ({ files, config, setConfig, onApply }) => 
 
 const PageNumberView: React.FC<any> = ({ files, config, setConfig, onApply }) => (
   <div className="space-y-6">
-    <ToolHint icon={<Hash size={18}/>} title="Pagination Engine" description="Insert incrementing page numbers (e.g. 1/12) in standard document positions." />
+    <ToolHint icon={<Hash size={18}/>} title="Pagination Engine" description="Insert incrementing page numbers into your document." />
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 bg-slate-50 rounded-[2.5rem] border border-slate-200">
       <div className="space-y-5">
         <div>
           <label className="text-[10px] font-black text-slate-400 uppercase mb-3 block tracking-widest">Vertical Position</label>
           <div className="flex bg-slate-200/50 p-1 rounded-2xl">
-            {['top', 'bottom'].map(p => <button key={p} onClick={() => setConfig({...config, position: p})} className={`flex-1 py-3 rounded-xl text-xs font-black capitalize transition-all ${config.position === p ? 'bg-white shadow-lg text-indigo-600' : 'text-slate-500'}`}>{p}</button>)}
+            {['top', 'bottom'].map(p => <button key={p} onClick={() => setConfig({...config, position: p as 'top'|'bottom'})} className={`flex-1 py-3 rounded-xl text-xs font-black capitalize transition-all ${config.position === p ? 'bg-white shadow-lg text-indigo-600' : 'text-slate-500'}`}>{p}</button>)}
           </div>
         </div>
         <div>
           <label className="text-[10px] font-black text-slate-400 uppercase mb-3 block tracking-widest">Alignment</label>
           <div className="flex bg-slate-200/50 p-1 rounded-2xl">
-            {['left', 'center', 'right'].map(a => <button key={a} onClick={() => setConfig({...config, alignment: a})} className={`flex-1 py-3 rounded-xl flex justify-center transition-all ${config.alignment === a ? 'bg-white shadow-lg text-indigo-600' : 'text-slate-400'}`}>{a === 'left' ? <AlignLeft size={18}/> : a === 'center' ? <AlignCenter size={18}/> : <AlignRight size={18}/>}</button>)}
+            {['left', 'center', 'right'].map(a => <button key={a} onClick={() => setConfig({...config, alignment: a as any})} className={`flex-1 py-3 rounded-xl flex justify-center transition-all ${config.alignment === a ? 'bg-white shadow-lg text-indigo-600' : 'text-slate-400'}`}>{a === 'left' ? <AlignLeft size={18}/> : a === 'center' ? <AlignCenter size={18}/> : <AlignRight size={18}/>}</button>)}
           </div>
         </div>
       </div>
@@ -840,7 +832,7 @@ const PageNumberView: React.FC<any> = ({ files, config, setConfig, onApply }) =>
     {files.map((f: any) => (
        <div key={f.id} className="p-6 bg-white border border-slate-100 rounded-3xl flex items-center justify-between shadow-sm">
         <h4 className="font-bold text-slate-800 truncate max-w-sm">{f.name}</h4>
-        <button onClick={() => onApply(f.id)} className="px-6 py-2.5 bg-slate-900 text-white rounded-2xl text-xs font-black shadow-xl shadow-slate-200 flex items-center gap-2 hover:bg-black transition-all">Add Numbers <ArrowUpRight size={14}/></button>
+        <button onClick={() => onApply(f.id)} className="px-6 py-2.5 bg-slate-900 text-white rounded-2xl text-xs font-black">Add Numbers</button>
       </div>
     ))}
   </div>
@@ -848,23 +840,23 @@ const PageNumberView: React.FC<any> = ({ files, config, setConfig, onApply }) =>
 
 const PdfToImageView: React.FC<any> = ({ files, format, setFormat, progress, onConvert }) => (
   <div className="space-y-6">
-    <ToolHint icon={<ImageIcon size={18}/>} title="Raster Export" description="Converts PDF pages into static images. Ideal for presentations or social sharing." />
+    <ToolHint icon={<ImageIcon size={18}/>} title="Raster Export" description="Converts PDF pages into static images." />
     <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 flex items-center justify-between">
        <p className="text-sm font-bold text-slate-700">Output Encoding</p>
        <div className="flex bg-slate-200/50 p-1 rounded-2xl w-64">
-          {['png', 'jpeg'].map(f => <button key={f} onClick={() => setFormat(f)} className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${format === f ? 'bg-white shadow-lg text-indigo-600' : 'text-slate-500'}`}>{f}</button>)}
+          {['png', 'jpeg'].map(f => <button key={f} onClick={() => setFormat(f as any)} className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${format === f ? 'bg-white shadow-lg text-indigo-600' : 'text-slate-500'}`}>{f}</button>)}
        </div>
     </div>
     {files.map((f: any) => (
       <div key={f.id} className="p-6 bg-white border border-slate-100 rounded-3xl space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <div className="truncate max-w-sm"><h4 className="font-bold text-slate-800 truncate">{f.name}</h4><p className="text-xs text-slate-400">{f.pageCount} Frames</p></div>
-          <button onClick={() => onConvert(f.id)} className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-black shadow-lg shadow-indigo-100">Package ZIP</button>
+          <h4 className="font-bold text-slate-800 truncate max-w-sm">{f.name}</h4>
+          <button onClick={() => onConvert(f.id)} className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-black shadow-lg">Package ZIP</button>
         </div>
         {progress[f.id] && (
            <div className="space-y-2 pt-2 animate-in fade-in">
               <div className="flex justify-between text-[9px] font-black text-indigo-600 uppercase tracking-widest"><span>Rendering Page {progress[f.id].current}</span><span>{Math.round((progress[f.id].current/progress[f.id].total)*100)}%</span></div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-50"><div className="h-full bg-indigo-600 shadow-[0_0_12px_rgba(79,70,229,0.4)] transition-all duration-300" style={{width:`${(progress[f.id].current/progress[f.id].total)*100}%`}}></div></div>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-50"><div className="h-full bg-indigo-600 transition-all duration-300" style={{width:`${(progress[f.id].current/progress[f.id].total)*100}%`}}></div></div>
            </div>
         )}
       </div>
@@ -881,13 +873,13 @@ const PdfToTextView: React.FC<any> = ({ files, texts, progress, onExtract }) => 
       return (
         <div key={f.id} className="p-6 bg-white border border-slate-100 rounded-[2rem] space-y-5 shadow-sm">
            <div className="flex items-center justify-between">
-             <div className="truncate max-w-sm"><h4 className="font-bold text-slate-800 truncate">{f.name}</h4><p className="text-xs text-slate-400">Content Scan</p></div>
+             <h4 className="font-bold text-slate-800 truncate max-w-sm">{f.name}</h4>
              <div className="flex gap-2">
-               {!text ? <button onClick={() => onExtract(f.id)} className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-black shadow-lg shadow-indigo-100">Extract Text</button> : <><button onClick={() => navigator.clipboard.writeText(text)} className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50">Copy</button><button onClick={() => downloadBlob(text, `${f.name}.txt`)} className="px-6 py-2.5 bg-slate-900 text-white rounded-2xl text-xs font-black shadow-xl">Save .txt</button></>}
+               {!text ? <button onClick={() => onExtract(f.id)} className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-xs font-black">Extract Text</button> : <><button onClick={() => navigator.clipboard.writeText(text)} className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold">Copy</button><button onClick={() => downloadBlob(text, `${f.name}.txt`)} className="px-6 py-2.5 bg-slate-900 text-white rounded-2xl text-xs font-black shadow-xl">Save .txt</button></>}
              </div>
            </div>
            {prog && <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 transition-all" style={{width:`${(prog.current/prog.total)*100}%`}}></div></div>}
-           {text && <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 max-h-60 overflow-y-auto custom-scrollbar shadow-inner"><pre className="text-[11px] font-mono text-slate-600 leading-relaxed whitespace-pre-wrap">{text.substring(0, 1500)}...</pre></div>}
+           {text && <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 max-h-60 overflow-y-auto shadow-inner"><pre className="text-[11px] font-mono text-slate-600 leading-relaxed whitespace-pre-wrap">{text.substring(0, 1500)}...</pre></div>}
         </div>
       );
     })}
